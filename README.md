@@ -1,0 +1,2 @@
+# compile
+Perform metanorma compile
