@@ -1,0 +1,105 @@
+name: test
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+concurrency:
+  group: '${{ github.workflow }}-${{ github.head_ref || github.ref_name }}'
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - run: |
+          sudo apt-get install yamllint
+          yamllint action.yml
+
+  test-compile-packed-mn:
+    name: Test actions-mn/compile action on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    steps:
+    - uses: actions/checkout@v3
+
+    - uses: actions-mn/setup@master
+
+    - run: mkdir result1
+    - uses: ./
+      with:
+        input-file: README.adoc
+        type: iso
+        extensions: html
+        output-dir: ./result1
+        no-install-fonts: true
+
+    - run: mkdir result2
+    - uses: ./
+      with:
+        input-file: README.adoc
+        type: iso
+        extensions: doc
+        output-dir: result2
+        agree-to-terms: true
+
+    - uses: andstor/file-existence-action@v1
+      with:
+        files: result1/README.html, result2/README.doc
+
+  test-compile-bundler:
+    name: Test actions-mn/compile for metanorma from gem on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ ubuntu-latest, windows-latest, macos-latest ]
+    steps:
+    - uses: actions/checkout@v3
+
+    - run: |
+        echo 'source "https://rubygems.org"' > Gemfile
+        echo 'gem "metanorma-cli"' >> Gemfile
+
+    - uses: ruby/setup-ruby@v1
+      with:
+        ruby-version: '2.7'
+        bundler-cache: true
+
+    - run: mkdir result
+    - uses: ./
+      with:
+        input-file: README.adoc
+        type: iso
+        extensions: html
+        output-dir: ./result
+        no-install-fonts: true
+        use-bundler: true
+
+  test-compile-docker:
+    name: Test actions-mn/compile action on ${{ matrix.os }}
+    runs-on: ubuntu-latest
+    container:
+      image: metanorma/metanorma:latest
+    steps:
+    - uses: actions/checkout@v3
+
+    - run: mkdir result1
+    - uses: ./
+      with:
+        input-file: README.adoc
+        type: iso
+        extensions: html
+        output-dir: ./result1
+        no-install-fonts: true
+
+    - uses: andstor/file-existence-action@v1
+      with:
+        files: result1/README.html

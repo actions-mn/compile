@@ -1,0 +1,74 @@
+name: metanorma-compile
+description: Compile to a metanorma document
+inputs:
+  input-file:
+    description: Source file to compile
+    required: true
+  type:
+    description: Type of standard to generate
+    required: true
+  extensions:
+    description: Comaseparated list of extensions to generate
+    default: ''
+  format:
+    description: 'Format of source file: eg. asciidoc'
+    default: ''
+  require:
+    description: Require LIBRARY prior to execution
+    default: ''
+  wrapper:
+    description: Create wrapper folder for HTML output
+    default: '' # false
+  asciimath:
+    description: Keep Asciimath in XML output instead of converting it to MathM
+    default: '' # false
+  datauriimage:
+    description: Encode HTML output images as data URIs
+    default: '' # false
+  relaton:
+    description: Export Relaton XML for document to nominated filename
+    default: ''
+  extract:
+    description: Export sourcecode fragments from this document to nominated directory
+    default: ''
+  output-dir:
+    description: Directory to save compiled files
+    default: ''
+  agree-to-terms:
+    description: |
+      Agree / Disagree with all third-party licensing terms presented
+      (WARNING: do know what you are agreeing with!)
+    default: '' # false
+  no-install-fonts:
+    description: 'Skip the font installation process'
+    default: '' # false
+  continue-without-fonts:
+    description: 'Continue processing even when fonts are missing'
+    default: '' # false
+  no-progress:
+    description: Don't show progress for long running tasks (like download)
+    default: 'true'
+  use-bundler:
+    description: 'Run in bundler'
+    default: '' # false
+
+runs:
+  using: "composite"
+  steps:
+    - shell: bash
+      run: |
+        ${{ inputs.use-bundler && 'bundle exec' || '' }}                                    \
+            metanorma compile ${{ inputs.input-file }} --type ${{ inputs.type }}            \
+            ${{ inputs.extensions && format('--extensions={0}', inputs.extensions) || '' }} \
+            ${{ inputs.format && format('--format={0}', inputs.format) || '' }}             \
+            ${{ inputs.require && format('--require={0}', inputs.require) || '' }}          \
+            ${{ inputs.wrapper && '--' || '--no-' }}wrapper                                 \
+            ${{ inputs.asciimath && '--' || '--no-' }}asciimath                             \
+            ${{ inputs.datauriimage && '--' || '--no-' }}datauriimage                       \
+            ${{ inputs.relaton && format('--relaton={0}', inputs.relaton) || '' }}          \
+            ${{ inputs.extract && format('--extract={0}', inputs.extract) || '' }}          \
+            ${{ inputs.output-dir && format('--output-dir={0}', inputs.output-dir) || '' }} \
+            ${{ inputs.agree-to-terms && '--' || '--no-' }}agree-to-terms                   \
+            ${{ inputs.no-install-fonts && '--' || '--no-' }}no-install-fonts               \
+            ${{ inputs.continue-without-fonts && '--' || '--no-' }}continue-without-fonts   \
+            ${{ inputs.no-progress && '--' || '--no-' }}no-progress
