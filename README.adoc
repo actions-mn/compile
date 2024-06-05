@@ -1,5 +1,5 @@
 
-image:https://img.shields.io/github/v/tag/actions-mn/build-and-publish!["GitHub tag (latest by date)", link="https://github.com/actions-mn/compile/releases"]
+image:https://img.shields.io/github/v/tag/actions-mn/compile["GitHub tag (latest by date)", link="https://github.com/actions-mn/compile/releases"]
 image:https://github.com/actions-mn/compile/actions/workflows/test.yml/badge.svg["CI", link="https://github.com/actions-mn/compile/actions/workflows/test.yml"]
 
 = compile
