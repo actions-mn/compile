@@ -39,9 +39,9 @@ inputs:
       Agree / Disagree with all third-party licensing terms presented
       (WARNING: do know what you are agreeing with!)
     default: '' # false
-  no-install-fonts:
+  install-fonts:
     description: 'Skip the font installation process'
-    default: '' # false
+    default: 'true'
   continue-without-fonts:
     description: 'Continue processing even when fonts are missing'
     default: '' # false
@@ -69,6 +69,6 @@ runs:
             ${{ inputs.extract && format('--extract={0}', inputs.extract) || '' }}          \
             ${{ inputs.output-dir && format('--output-dir={0}', inputs.output-dir) || '' }} \
             ${{ inputs.agree-to-terms && '--' || '--no-' }}agree-to-terms                   \
-            ${{ inputs.no-install-fonts && '--' || '--no-' }}no-install-fonts               \
+            ${{ inputs.install-fonts == 'true' && '--' || '--no-' }}install-fonts           \
             ${{ inputs.continue-without-fonts && '--' || '--no-' }}continue-without-fonts   \
-            ${{ inputs.no-progress && '--' || '--no-' }}no-progress
+            ${{ inputs.no-progress == 'true' && '--no-' || '--' }}progress
