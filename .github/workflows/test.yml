@@ -39,7 +39,7 @@ jobs:
         type: iso
         extensions: html
         output-dir: ./result1
-        no-install-fonts: true
+        install-fonts: false
 
     - run: mkdir result2
     - uses: ./
@@ -80,7 +80,7 @@ jobs:
         type: iso
         extensions: html
         output-dir: ./result
-        no-install-fonts: true
+        install-fonts: false
         use-bundler: true
 
   test-compile-docker:
@@ -98,7 +98,7 @@ jobs:
         type: iso
         extensions: html
         output-dir: ./result1
-        no-install-fonts: true
+        install-fonts: false
 
     - uses: andstor/file-existence-action@v1
       with:
