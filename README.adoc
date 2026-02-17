@@ -4,25 +4,192 @@ image:https://github.com/actions-mn/compile/actions/workflows/test.yml/badge.svg
 
 = compile
 
-Perform `metanorma compile`, like this
+Compile a Metanorma document from source using `metanorma compile`.
 
 [source,yml]
 ----
-- uses: actions-mn/compile@main
+- uses: actions-mn/compile@v2
   with:
-    input-file: README.adoc
+    input-file: document.adoc
     type: iso
     extensions: html
-    output-dir: ./result1
-    no-install-fonts: true
+    output-dir: ./result
 ----
 
+== Inputs
 
-The action expects that metanorma-cli is already installed.
+[cols="2,1,3,3"]
+|===
+|Input |Type |Default |Description
 
-You can install it by defferent ways:
-* `actions-mn/setup@master`
-* `gem install metanorma-cli`
-* with metanorma docker image
+|`input-file`
+|string
+|(required)
+|Source file to compile.
 
-TIP: if `metanorma-cli` installed with `bundle install` make sure to path `use-bundler: true` to the action
+|`type`
+|string
+|(required)
+|Type of standard to generate (e.g., `iso`, `ogc`, `iho`).
+
+|`extensions`
+|string
+|''
+|Comma-separated list of extensions to generate (e.g., `html`, `doc`, `xml`, `pdf`).
+
+|`format`
+|string
+|''
+|Format of source file (e.g., `asciidoc`).
+
+|`require`
+|string
+|''
+|Library to require prior to execution.
+
+|`wrapper`
+|boolean
+|false
+|Create wrapper folder for HTML output.
+
+|`asciimath`
+|boolean
+|false
+|Keep Asciimath in XML output instead of converting it to MathML.
+
+|`datauriimage`
+|boolean
+|false
+|Encode HTML output images as data URIs.
+
+|`relaton`
+|string
+|''
+|Export Relaton XML for document to nominated filename.
+
+|`extract`
+|string
+|''
+|Export source code fragments from this document to nominated directory.
+
+|`output-dir`
+|string
+|''
+|Directory to save compiled files.
+
+|`agree-to-terms`
+|boolean
+|false
+|Agree to all third-party licensing terms presented. Required for some document types.
+
+|`install-fonts`
+|boolean
+|true
+|Skip the font installation process.
+
+|`continue-without-fonts`
+|boolean
+|false
+|Continue processing even when fonts are missing.
+
+|`no-progress`
+|boolean
+|true
+|Show progress for long running tasks (like downloads).
+
+|`use-bundler`
+|boolean
+|false
+|Run using bundler (execute via `bundle exec`).
+
+|===
+
+== Outputs
+
+[cols="2,3"]
+|===
+|Output |Description
+
+|`metanorma-version`
+|Version of metanorma used for compilation.
+
+|`output-dir`
+|Output directory path (resolved from input or default).
+
+|===
+
+== Environment Variables
+
+This action exports `METANORMA_CMD` to the environment, which contains the command used to run metanorma. This can be used in subsequent steps.
+
+== Prerequisites
+
+The action expects that metanorma-cli is already installed. You can install it by:
+
+* Using `actions-mn/setup@v3`
+* Running `gem install metanorma-cli`
+* Using the metanorma Docker image
+
+If metanorma-cli is installed with `bundle install`, make sure to pass `use-bundler: true` to the action.
+
+== Examples
+
+=== Basic compilation
+
+[source,yml]
+----
+- uses: actions-mn/compile@v2
+  with:
+    input-file: document.adoc
+    type: iso
+    extensions: html
+    output-dir: ./result
+    install-fonts: false
+----
+
+=== Multiple output formats
+
+[source,yml]
+----
+- uses: actions-mn/compile@v2
+  with:
+    input-file: document.adoc
+    type: iso
+    extensions: html,doc
+    output-dir: ./result
+    install-fonts: false
+    agree-to-terms: true
+    continue-without-fonts: true
+----
+
+=== With bundler
+
+[source,yml]
+----
+- uses: actions-mn/compile@v2
+  with:
+    input-file: document.adoc
+    type: iso
+    extensions: html
+    output-dir: ./result
+    use-bundler: true
+    install-fonts: false
+----
+
+=== Docker container
+
+[source,yml]
+----
+jobs:
+  compile:
+    runs-on: ubuntu-latest
+    container: metanorma/metanorma:latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions-mn/compile@v2
+        with:
+          input-file: document.adoc
+          type: iso
+          extensions: html
+          output-dir: ./result
+----
