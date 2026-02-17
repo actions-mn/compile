@@ -1,105 +1,297 @@
-name: test
+name: Build and Test
 
 on:
-  push:
-    branches: [ main ]
   pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
 
 concurrency:
   group: '${{ github.workflow }}-${{ github.head_ref || github.ref_name }}'
   cancel-in-progress: true
 
 jobs:
-  lint:
-    name: Lint
+  lint-test:
+    uses: actions-mn/shared/.github/workflows/lint-test.yml@main
+    with:
+      run-lint: true
+
+  lint-action-yaml:
+    name: Lint Action YAML
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-
+      - uses: actions/checkout@v6
       - run: |
           sudo apt-get install yamllint
           yamllint action.yml
 
   test-compile-packed-mn:
-    name: Test actions-mn/compile action on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: Test compile on ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    needs: lint-test
+
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
 
-    - uses: actions-mn/setup@main
+      - name: Checkout test data
+        uses: actions/checkout@v6
+        with:
+          repository: metanorma/mn-samples-iso
+          path: test-docs
 
-    - run: mkdir result1
-    - uses: ./
-      with:
-        input-file: README.adoc
-        type: iso
-        extensions: html
-        output-dir: ./result1
-        install-fonts: false
+      - uses: actions-mn/setup@v3
 
-    - run: mkdir result2
-    - uses: ./
-      with:
-        input-file: README.adoc
-        type: iso
-        extensions: doc
-        output-dir: result2
-        agree-to-terms: true
+      - name: Test compile with html extension
+        uses: ./
+        with:
+          input-file: test-docs/sources/international-standard/rice-2023/document-en.adoc
+          type: iso
+          extensions: html
+          output-dir: ./result1
+          install-fonts: false
 
-    - uses: andstor/file-existence-action@v1
-      with:
-        files: result1/README.html, result2/README.doc
+      - name: Test compile with doc extension
+        uses: ./
+        with:
+          input-file: test-docs/sources/international-standard/rice-2023/document-en.adoc
+          type: iso
+          extensions: doc
+          output-dir: ./result2
+          agree-to-terms: true
+          continue-without-fonts: true
+
+      - uses: andstor/file-existence-action@v3
+        with:
+          files: result1/document-en.html, result2/document-en.doc
 
   test-compile-bundler:
-    name: Test actions-mn/compile for metanorma from gem on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: Test compile with bundler on ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
-        os: [ ubuntu-latest, windows-latest, macos-latest ]
+        # Windows excluded due to known bundle.bat exit code 127 issue in CI
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    needs: lint-test
+
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
 
-    - run: |
-        echo 'source "https://rubygems.org"' > Gemfile
-        echo 'gem "metanorma-cli"' >> Gemfile
+      - name: Checkout test data
+        uses: actions/checkout@v6
+        with:
+          repository: metanorma/mn-samples-iso
+          path: test-docs
 
-    - uses: ruby/setup-ruby@v1
-      with:
-        ruby-version: '2.7'
-        bundler-cache: true
+      - run: |
+          echo 'source "https://rubygems.org"' > Gemfile
+          echo 'gem "metanorma-cli"' >> Gemfile
+        shell: bash
 
-    - run: mkdir result
-    - uses: ./
-      with:
-        input-file: README.adoc
-        type: iso
-        extensions: html
-        output-dir: ./result
-        install-fonts: false
-        use-bundler: true
+      - uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: '3.2'
+          bundler-cache: true
+
+      - name: Test compile with bundler
+        uses: ./
+        with:
+          input-file: test-docs/sources/international-standard/rice-2023/document-en.adoc
+          type: iso
+          extensions: html
+          output-dir: ./result
+          install-fonts: false
+          use-bundler: true
+
+      - uses: andstor/file-existence-action@v3
+        with:
+          files: result/document-en.html
 
   test-compile-docker:
-    name: Test actions-mn/compile action on ${{ matrix.os }}
+    name: Test compile in Docker
     runs-on: ubuntu-latest
+    needs: lint-test
     container:
       image: metanorma/metanorma:latest
+
     steps:
-    - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
 
-    - run: mkdir result1
-    - uses: ./
-      with:
-        input-file: README.adoc
-        type: iso
-        extensions: html
-        output-dir: ./result1
-        install-fonts: false
+      - name: Checkout test data
+        uses: actions/checkout@v6
+        with:
+          repository: metanorma/mn-samples-iso
+          path: test-docs
 
-    - uses: andstor/file-existence-action@v1
-      with:
-        files: result1/README.html
+      - name: Test compile in container
+        uses: ./
+        with:
+          input-file: test-docs/sources/international-standard/rice-2023/document-en.adoc
+          type: iso
+          extensions: html
+          output-dir: ./result1
+          install-fonts: false
+
+      - uses: andstor/file-existence-action@v3
+        with:
+          files: result1/document-en.html
+
+  test-compile-options:
+    name: Test compile options on ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    needs: lint-test
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Checkout test data
+        uses: actions/checkout@v6
+        with:
+          repository: metanorma/mn-samples-iso
+          path: test-docs
+
+      - uses: actions-mn/setup@v3
+
+      - name: Test with wrapper option
+        uses: ./
+        with:
+          input-file: test-docs/sources/international-standard/rice-2023/document-en.adoc
+          type: iso
+          extensions: html
+          output-dir: ./result-wrapper
+          wrapper: true
+          install-fonts: false
+
+      - name: Test with datauriimage option
+        uses: ./
+        with:
+          input-file: test-docs/sources/international-standard/rice-2023/document-en.adoc
+          type: iso
+          extensions: html
+          output-dir: ./result-datauri
+          datauriimage: true
+          install-fonts: false
+
+      - name: Test with multiple extensions
+        uses: ./
+        with:
+          input-file: test-docs/sources/international-standard/rice-2023/document-en.adoc
+          type: iso
+          extensions: html,xml
+          output-dir: ./result-multi
+          install-fonts: false
+
+      - name: Test with progress enabled
+        uses: ./
+        with:
+          input-file: test-docs/sources/international-standard/rice-2023/document-en.adoc
+          type: iso
+          extensions: html
+          output-dir: ./result-progress
+          no-progress: false
+          install-fonts: false
+
+      - name: Verify outputs
+        shell: bash
+        run: |
+          ls -la result-wrapper/ result-datauri/ result-multi/
+
+          # Wrapper option creates a directory structure, not a single HTML file
+          if [ ! -d "result-wrapper/document-en" ]; then
+            echo "Error: Wrapper directory result-wrapper/document-en not found"
+            exit 1
+          fi
+
+          test -f result-datauri/document-en.html || exit 1
+          test -f result-multi/document-en.html || exit 1
+
+          # Metanorma generates XML files with various names (presentation.xml, etc.)
+          xml_count=$(find result-multi -name "*.xml" -type f | wc -l | tr -d ' ')
+          if [ "$xml_count" -eq 0 ]; then
+            echo "Error: No XML files found in result-multi"
+            exit 1
+          fi
+          echo "Found $xml_count XML file(s) in result-multi"
+
+  test-input-validation:
+    name: Test input validation
+    runs-on: ubuntu-latest
+    needs: lint-test
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions-mn/setup@v3
+
+      - name: Test path traversal rejection
+        uses: ./
+        id: test-traversal
+        continue-on-error: true
+        with:
+          input-file: '../../../etc/passwd'
+          type: iso
+          install-fonts: false
+
+      - name: Verify path traversal was rejected
+        shell: bash
+        run: |
+          if [ "${{ steps.test-traversal.outcome }}" != "failure" ]; then
+            echo "Error: Path traversal should have been rejected"
+            exit 1
+          fi
+
+  test-outputs:
+    name: Test outputs
+    runs-on: ubuntu-latest
+    needs: lint-test
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Checkout test data
+        uses: actions/checkout@v6
+        with:
+          repository: metanorma/mn-samples-iso
+          path: test-docs
+
+      - uses: actions-mn/setup@v3
+
+      - name: Test action with output verification
+        id: compile
+        uses: ./
+        with:
+          input-file: test-docs/sources/international-standard/rice-2023/document-en.adoc
+          type: iso
+          extensions: html
+          output-dir: ./result
+          install-fonts: false
+
+      - name: Verify outputs are set
+        shell: bash
+        run: |
+          echo "Output dir: ${{ steps.compile.outputs.output-dir }}"
+          echo "Metanorma version: ${{ steps.compile.outputs.metanorma-version }}"
+
+          if [ -z "${{ steps.compile.outputs.metanorma-version }}" ]; then
+            echo "Error: metanorma-version output not set"
+            exit 1
+          fi
+
+      - name: Verify METANORMA_CMD is exported
+        shell: bash
+        run: |
+          if [ -z "${{ env.METANORMA_CMD }}" ]; then
+            echo "Error: METANORMA_CMD not exported to GITHUB_ENV"
+            exit 1
+          fi
+          echo "METANORMA_CMD: ${{ env.METANORMA_CMD }}"

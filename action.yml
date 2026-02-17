@@ -18,13 +18,13 @@ inputs:
     default: ''
   wrapper:
     description: Create wrapper folder for HTML output
-    default: '' # false
+    default: ''
   asciimath:
     description: Keep Asciimath in XML output instead of converting it to MathM
-    default: '' # false
+    default: ''
   datauriimage:
     description: Encode HTML output images as data URIs
-    default: '' # false
+    default: ''
   relaton:
     description: Export Relaton XML for document to nominated filename
     default: ''
@@ -38,37 +38,26 @@ inputs:
     description: |
       Agree / Disagree with all third-party licensing terms presented
       (WARNING: do know what you are agreeing with!)
-    default: '' # false
+    default: ''
   install-fonts:
     description: 'Skip the font installation process'
     default: 'true'
   continue-without-fonts:
     description: 'Continue processing even when fonts are missing'
-    default: '' # false
+    default: ''
   no-progress:
     description: Don't show progress for long running tasks (like download)
     default: 'true'
   use-bundler:
     description: 'Run in bundler'
-    default: '' # false
+    default: ''
+
+outputs:
+  metanorma-version:
+    description: Version of metanorma used for compilation
+  output-dir:
+    description: Output directory path
 
 runs:
-  using: "composite"
-  steps:
-    - shell: bash
-      run: |
-        ${{ inputs.use-bundler && 'bundle exec' || '' }}                                    \
-            metanorma compile ${{ inputs.input-file }} --type ${{ inputs.type }}            \
-            ${{ inputs.extensions && format('--extensions={0}', inputs.extensions) || '' }} \
-            ${{ inputs.format && format('--format={0}', inputs.format) || '' }}             \
-            ${{ inputs.require && format('--require={0}', inputs.require) || '' }}          \
-            ${{ inputs.wrapper && '--' || '--no-' }}wrapper                                 \
-            ${{ inputs.asciimath && '--' || '--no-' }}asciimath                             \
-            ${{ inputs.datauriimage && '--' || '--no-' }}datauriimage                       \
-            ${{ inputs.relaton && format('--relaton={0}', inputs.relaton) || '' }}          \
-            ${{ inputs.extract && format('--extract={0}', inputs.extract) || '' }}          \
-            ${{ inputs.output-dir && format('--output-dir={0}', inputs.output-dir) || '' }} \
-            ${{ inputs.agree-to-terms && '--' || '--no-' }}agree-to-terms                   \
-            ${{ inputs.install-fonts == 'true' && '--' || '--no-' }}install-fonts           \
-            ${{ inputs.continue-without-fonts && '--' || '--no-' }}continue-without-fonts   \
-            ${{ inputs.no-progress == 'true' && '--no-' || '--' }}progress
+  using: node24
+  main: dist/index.js
