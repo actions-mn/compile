@@ -3,14 +3,11 @@ name: Release
 on:
   workflow_dispatch:
     inputs:
-      version:
-        description: 'Version to release (e.g., 1.2.0)'
+      next_version:
+        description: |
+          Next version. Values: x.y.z, major, minor, patch. Defaults to patch.
         required: false
-        type: string
-      create_release:
-        description: 'Create a GitHub Release'
-        type: boolean
-        default: true
+        default: 'patch'
 
 permissions:
   contents: write
@@ -20,5 +17,5 @@ jobs:
   release:
     uses: actions-mn/shared/.github/workflows/release.yml@main
     with:
-      version: ${{ inputs.version }}
-      create_release: ${{ inputs.create_release }}
+      next_version: ${{ inputs.next_version }}
+      create_release: true
