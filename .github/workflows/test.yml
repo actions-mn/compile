@@ -92,6 +92,7 @@ jobs:
       - run: |
           echo 'source "https://rubygems.org"' > Gemfile
           echo 'gem "metanorma-cli"' >> Gemfile
+          echo 'gem "lutaml-model", "~> 0.7.0"' >> Gemfile
         shell: bash
 
       - uses: ruby/setup-ruby@v1
